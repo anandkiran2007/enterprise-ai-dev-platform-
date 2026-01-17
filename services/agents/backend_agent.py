@@ -14,6 +14,7 @@ from openai import AsyncOpenAI
 
 from services.api.config import settings
 from services.agents.base_agent import BaseAgent, AgentInput, AgentOutput, AgentStatus, AgentUtils
+from services.agents.utils.file_manager import FileManager
 
 
 @dataclass
@@ -40,6 +41,7 @@ class BackendAgent(BaseAgent):
         super().__init__("backend", {})
         self.client = AsyncOpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
         self.max_file_size = 10000  # Max characters per file
+        self.file_manager = FileManager()
     
     async def execute(self, input_data: BackendInput) -> BackendOutput:
         """Execute backend implementation with pattern compliance"""
@@ -52,14 +54,55 @@ class BackendAgent(BaseAgent):
             # Analyze existing patterns
             pattern_analysis = await self._analyze_existing_patterns(input_data.existing_patterns)
             
-            # Generate code changes
+            # Generate code changes with file management
             code_changes = {}
+            processed_files = []
+            
             for file_path in file_scope:
-                change = await self._generate_code_change(
-                    file_path, requirements, pattern_analysis
-                )
-                if change:
-                    code_changes[file_path] = change
+                # Analyze file size and determine strategy
+                file_analysis = await self.file_manager.analyze_file(file_path)
+                
+                if file_analysis.get('error'):
+                    continue  # Skip files that can't be analyzed
+                
+                strategy = file_analysis.get('strategy', 'direct')
+                
+                if strategy == 'direct':
+                    # Direct modification for small files
+                    change = await self._generate_code_change(
+                        file_path, requirements, pattern_analysis
+                    )
+                    if change:
+                        code_changes[file_path] = change
+                        processed_files.append(file_path)
+                        
+                elif strategy in ['chunked', 'split']:
+                    # Use file manager for large files
+                    operation_id = await self.file_manager.create_file_operation(
+                        'update', 
+                        file_path, 
+                        await self._get_existing_content(file_path),  # Get current content
+                        context={'requirements': requirements, 'pattern_analysis': pattern_analysis}
+                    )
+                    
+                    # Execute the operation
+                    result = await self.file_manager.execute_operation(operation_id)
+                    
+                    if result.get('success'):
+                        code_changes[file_path] = result.get('updated_content', '')
+                        processed_files.append(file_path)
+                    else:
+                        # Log error but continue with other files
+                        print(f"Failed to process {file_path}: {result.get('error')}")
+                        
+                else:
+                    # Specialized handling for very large files
+                    change = await self._generate_code_change(
+                        file_path, requirements, pattern_analysis
+                    )
+                    if change:
+                        code_changes[file_path] = change
+                        processed_files.append(file_path)
             
             # Generate unit tests
             unit_tests = await self._generate_unit_tests(
@@ -132,6 +175,35 @@ class BackendAgent(BaseAgent):
             }
         
         # Aggregate pattern information
+        frameworks = []
+        import_styles = []
+        naming_conventions = {}
+        
+        for pattern in existing_patterns:
+            if pattern.get('framework'):
+                frameworks.append(pattern['framework'])
+            
+            if pattern.get('import_style'):
+                import_styles.append(pattern['import_style'])
+            
+            if pattern.get('naming_convention'):
+                naming_conventions.update(pattern['naming_convention'])
+        
+        # Determine primary framework
+        primary_framework = max(set(frameworks), key=frameworks.count) if frameworks else 'unknown'
+        
+        return {
+            'framework': primary_framework,
+            'style_guide': self._detect_style_guide(existing_patterns),
+            'conventions': naming_conventions,
+            'import_style': import_styles[0] if import_styles else 'standard',
+            'patterns': existing_patterns
+        }
+    
+    async def _analyze_existing_patterns(self, existing_patterns: List[Dict]) -> Dict[str, Any]:
+        """Analyze existing coding patterns"""
+        
+        # Simple heuristic based on common patterns
         frameworks = []
         import_styles = []
         naming_conventions = {}
