@@ -42,10 +42,11 @@ async def github_callback(
         return RedirectResponse(url=redirect_url, status_code=302)
         
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"GitHub authentication failed: {str(e)}"
-        )
+        # Log the error for debugging
+        print(f"GitHub callback error: {str(e)}")
+        # Redirect to dashboard with error parameter
+        error_url = f"{settings.dashboard_url}?error=auth_failed&message={str(e)}"
+        return RedirectResponse(url=error_url, status_code=302)
 
 
 @router.get("/github")
@@ -60,7 +61,7 @@ async def github_authorize():
     """Initiate GitHub OAuth flow"""
     github_client_id = settings.github_client_id
     redirect_uri = f"{settings.base_url}/api/auth/github/callback"
-    scope = "user:email user:repo"
+    scope = "user:email user:repo read:org"
     
     auth_url = (
         f"https://github.com/login/oauth/authorize?"
