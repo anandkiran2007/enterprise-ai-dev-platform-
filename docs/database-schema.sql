@@ -75,23 +75,23 @@ CREATE TABLE discovery_reports (
 );
 
 -- Add pgvector extension (will be added after extension is available)
--- CREATE EXTENSION IF NOT EXISTS "pgvector";
+CREATE EXTENSION IF NOT EXISTS "pgvector";
 
--- Semantic Index (pgvector) - will be created after extension
--- CREATE TABLE code_chunks (
---     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
---     repository_id UUID REFERENCES repositories(id) ON DELETE CASCADE,
---     file_path VARCHAR(1000) NOT NULL,
---     chunk_type VARCHAR(50) NOT NULL, -- 'route', 'service', 'model', 'config', 'test'
---     content TEXT NOT NULL,
---     embedding vector(1536), -- OpenAI ada-002 dimension
---     metadata JSONB,
---     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
---     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
--- );
+-- Semantic Index (pgvector)
+CREATE TABLE code_chunks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    repository_id UUID REFERENCES repositories(id) ON DELETE CASCADE,
+    file_path VARCHAR(1000) NOT NULL,
+    chunk_type VARCHAR(50) NOT NULL, -- 'route', 'service', 'model', 'config', 'test'
+    content TEXT NOT NULL,
+    embedding vector(1536), -- OpenAI ada-002 dimension
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Create vector index for similarity search
--- CREATE INDEX code_chunks_embedding_idx ON code_chunks USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX code_chunks_embedding_idx ON code_chunks USING ivfflat (embedding vector_cosine_ops);
 
 -- Feature Requests
 CREATE TABLE feature_requests (
