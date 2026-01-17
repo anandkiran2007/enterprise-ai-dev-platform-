@@ -115,7 +115,11 @@ class AuthService:
                 headers={"Authorization": f"token {access_token}"}
             )
             
-            if response.status_code != 200:
+            if response.status_code == 403:
+                # Rate limited or insufficient permissions
+                print(f"Warning: GitHub user API rate limited (403): {response.headers.get('X-RateLimit-Remaining', 'unknown')}")
+                raise Exception(f"GitHub API rate limit exceeded. Please try again later.")
+            elif response.status_code != 200:
                 raise Exception(f"Failed to get GitHub user: {response.text}")
             
             return response.json()
@@ -128,7 +132,12 @@ class AuthService:
                 headers={"Authorization": f"token {access_token}"}
             )
             
-            if response.status_code != 200:
+            if response.status_code == 403:
+                # User doesn't have organization access or insufficient permissions
+                print(f"Warning: Cannot access GitHub organizations (403): {response.text}")
+                return []
+            elif response.status_code != 200:
+                print(f"Warning: Failed to get GitHub organizations ({response.status_code}): {response.text}")
                 return []
             
             return response.json()

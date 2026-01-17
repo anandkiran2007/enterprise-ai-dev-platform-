@@ -69,6 +69,20 @@ async def health_check():
 async def api_health_check():
     return {"status": "healthy", "service": "api-gateway"}
 
+@app.get("/api/test")
+async def test_endpoint():
+    return {"message": "Test endpoint working", "timestamp": "2026-01-17T06:54:00Z"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    print(f"ERROR: Unhandled exception: {str(exc)}")
+    return {
+        "error": "Internal server error",
+        "message": str(exc),
+        "status_code": 500
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run(

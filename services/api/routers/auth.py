@@ -52,6 +52,7 @@ async def github_callback(
 @router.get("/github")
 async def github_auth_redirect():
     """Redirect to GitHub OAuth authorize endpoint"""
+    print(f"DEBUG: GitHub auth redirect called")
     return RedirectResponse(url="/api/auth/github/authorize", status_code=302)
 
 
@@ -59,6 +60,7 @@ async def github_auth_redirect():
 @router.head("/github/authorize")
 async def github_authorize():
     """Initiate GitHub OAuth flow"""
+    print(f"DEBUG: GitHub authorize called")
     github_client_id = settings.github_client_id
     redirect_uri = f"{settings.base_url}/api/auth/github/callback"
     scope = "user:email user:repo read:org"
@@ -71,6 +73,7 @@ async def github_authorize():
         f"state=random_state"
     )
     
+    print(f"DEBUG: Redirecting to: {auth_url}")
     return RedirectResponse(url=auth_url, status_code=302)
 
 

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Test</title>
+</head>
+<body>
+    <h1>GitHub OAuth Test</h1>
+    <p>Test the OAuth flow:</p>
+    <button onclick="window.location.href='/api/auth/github/authorize'">
+        Sign in with GitHub (Test)
+    </button>
+    <p>Current URL: <span id="current-url"></span></p>
+    <script>
+        document.getElementById('current-url').textContent = window.location.href;
+    </script>
+</body>
+</html>
