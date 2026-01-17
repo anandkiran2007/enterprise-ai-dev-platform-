@@ -71,5 +71,5 @@ if __name__ == "__main__":
         "services.api.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True if os.getenv("ENVIRONMENT") == "development" else False
+        reload=False
     )

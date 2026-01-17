@@ -49,6 +49,7 @@ async def github_callback(
 
 
 @router.get("/github/authorize")
+@router.head("/github/authorize")
 async def github_authorize():
     """Initiate GitHub OAuth flow"""
     github_client_id = settings.github_client_id
