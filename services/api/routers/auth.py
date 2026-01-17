@@ -4,6 +4,7 @@ Authentication routes
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
+from fastapi.responses import RedirectResponse
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -20,6 +21,49 @@ from services.api.config import settings
 router = APIRouter()
 security = HTTPBearer()
 auth_service = AuthService()
+
+
+@router.get("/github/callback")
+async def github_callback(
+    code: str,
+    state: Optional[str] = None,
+    db=Depends(get_db)
+):
+    """Handle GitHub OAuth callback"""
+    try:
+        result = await auth_service.authenticate_github(
+            code=code,
+            redirect_uri=f"{settings.base_url}/api/auth/github/callback",
+            db=db
+        )
+        
+        # Redirect to dashboard with token
+        redirect_url = f"{settings.dashboard_url}?token={result.access_token}"
+        return RedirectResponse(url=redirect_url, status_code=302)
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"GitHub authentication failed: {str(e)}"
+        )
+
+
+@router.get("/github/authorize")
+async def github_authorize():
+    """Initiate GitHub OAuth flow"""
+    github_client_id = settings.github_client_id
+    redirect_uri = f"{settings.base_url}/api/auth/github/callback"
+    scope = "user:email user:repo"
+    
+    auth_url = (
+        f"https://github.com/login/oauth/authorize?"
+        f"client_id={github_client_id}&"
+        f"redirect_uri={redirect_uri}&"
+        f"scope={scope}&"
+        f"state=random_state"
+    )
+    
+    return RedirectResponse(url=auth_url, status_code=302)
 
 
 @router.post("/github", response_model=GitHubAuthResponse)

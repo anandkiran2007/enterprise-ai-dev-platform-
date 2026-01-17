@@ -4,6 +4,7 @@ Handles large file splitting, chunked editing, and manageable file operations
 """
 
 import os
+import re
 import hashlib
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass

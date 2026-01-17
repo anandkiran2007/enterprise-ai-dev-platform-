@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     github_client_id: Optional[str] = None
     github_client_secret: Optional[str] = None
     
+    # URLs
+    base_url: str = "http://localhost"
+    dashboard_url: str = "http://localhost"
+    
     # Storage
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None
