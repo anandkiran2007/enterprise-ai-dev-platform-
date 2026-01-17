@@ -10,7 +10,8 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   UserGroupIcon,
-  DocumentIcon
+  DocumentIcon,
+  EllipsisHorizontalIcon,
 } from '@heroicons/react/24/outline'
 
 interface Project {
@@ -25,96 +26,163 @@ interface Project {
   team: string[]
 }
 
+type ActivityType = 'build' | 'deploy' | 'commit' | 'error'
+
+interface Activity {
+  id: string
+  type: ActivityType
+  message: string
+  timestamp: string
+  user: string
+}
+
+type MetricTrend = 'up' | 'down' | 'neutral'
+type MetricColor = 'blue' | 'green' | 'yellow' | 'red' | 'purple'
+
+interface MetricChange {
+  value: string
+  trend: MetricTrend
+}
+
 interface Metric {
   label: string
   value: string | number
-  change?: number
-  trend?: 'up' | 'down' | 'neutral'
+  title: string
+  color: MetricColor
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  change?: MetricChange
 }
 
 export default function DashboardPage() {
   const { state } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
   const [metrics, setMetrics] = useState<Metric[]>([])
-  const [loading, setLoading] = useState(true)
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate fetching data
-    const fetchDashboardData = async () => {
-      try {
-        // In real app, these would be API calls
-        const mockProjects: Project[] = [
-          {
-            id: '1',
-            name: 'E-commerce Platform',
-            description: 'AI-powered e-commerce platform with React and Node.js',
-            status: 'active',
-            repository: 'github.com/company/ecommerce-platform',
-            lastBuild: '2024-01-16T22:00:00Z',
-            buildTime: 120,
-            coverage: 85,
-            team: ['Alice Chen', 'Bob Smith', 'Carol Davis']
-          },
-          {
-            id: '2',
-            name: 'Mobile App Backend',
-            description: 'Flutter mobile app backend with Firebase integration',
-            status: 'building',
-            repository: 'github.com/company/mobile-app',
-            lastBuild: '2024-01-16T20:00:00Z',
-            buildTime: 180,
-            coverage: 72,
-            team: ['David Wilson', 'Eve Brown']
-          },
-          {
-            id: '3',
-            name: 'Data Analytics Pipeline',
-            description: 'ETL pipeline for real-time data processing',
-            status: 'completed',
-            repository: 'github.com/company/analytics',
-            lastBuild: '2024-01-15T18:00:00Z',
-            buildTime: 90,
-            coverage: 92,
-            team: ['Frank Miller', 'Grace Lee']
-          }
-        ]
+    const loadData = async () => {
+      // Mock projects with full Project shape
+      const mockProjects: Project[] = [
+        {
+          id: '1',
+          name: 'E-commerce Platform',
+          description: 'AI-powered e-commerce platform with React and Node.js',
+          status: 'active',
+          repository: 'github.com/company/ecommerce-platform',
+          lastBuild: '2024-01-16T22:00:00Z',
+          buildTime: 120,
+          coverage: 85,
+          team: ['Alice Chen', 'Bob Smith', 'Carol Davis'],
+        },
+        {
+          id: '2',
+          name: 'Mobile App API',
+          description: 'Backend API for mobile clients',
+          status: 'building',
+          repository: 'github.com/company/mobile-api',
+          lastBuild: '2024-01-16T21:30:00Z',
+          buildTime: 95,
+          coverage: 78,
+          team: ['John Doe', 'Eve Martinez'],
+        },
+        {
+          id: '3',
+          name: 'Data Analytics Dashboard',
+          description: 'Analytics dashboard for business metrics',
+          status: 'completed',
+          repository: 'github.com/company/analytics-dashboard',
+          lastBuild: '2024-01-15T18:00:00Z',
+          buildTime: 110,
+          coverage: 92,
+          team: ['Mike Johnson', 'Sarah Wilson'],
+        },
+        {
+          id: '4',
+          name: 'AI Content Generator',
+          description: 'AI-based content generation tool',
+          status: 'failed',
+          repository: 'github.com/company/ai-content',
+          lastBuild: '2024-01-16T20:10:00Z',
+          buildTime: 60,
+          coverage: 65,
+          team: ['Jane Smith', 'Tom Lee'],
+        },
+      ]
 
-        const mockMetrics: Metric[] = [
-          {
-            label: 'Total Projects',
-            value: 12,
-            change: 2,
-            trend: 'up'
-          },
-          {
-            label: 'Active Builds',
-            value: 3,
-            change: -1,
-            trend: 'down'
-          },
-          {
-            label: 'Avg Coverage',
-            value: '83%',
-            change: 5,
-            trend: 'up'
-          },
-          {
-            label: 'Team Members',
-            value: 8,
-            trend: 'neutral'
-          }
-        ]
+      const mockMetrics: Metric[] = [
+        {
+          label: 'Active Projects',
+          title: 'Projects currently in progress',
+          value: 3,
+          color: 'blue',
+          icon: FolderIcon,
+          change: { value: '+1 this week', trend: 'up' },
+        },
+        {
+          label: 'Build Success Rate',
+          title: 'Successful builds in the last 24h',
+          value: '92%',
+          color: 'green',
+          icon: CheckCircleIcon,
+          change: { value: '+4%', trend: 'up' },
+        },
+        {
+          label: 'Mean Build Time',
+          title: 'Average build duration',
+          value: '104s',
+          color: 'yellow',
+          icon: ClockIcon,
+          change: { value: '-8s', trend: 'down' },
+        },
+        {
+          label: 'Open Incidents',
+          title: 'Current build/ deploy incidents',
+          value: 2,
+          color: 'red',
+          icon: ExclamationTriangleIcon,
+          change: { value: '+1', trend: 'up' },
+        },
+      ]
 
-        setProjects(mockProjects)
-        setMetrics(mockMetrics)
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error)
-      } finally {
-        setLoading(false)
-      }
+      const mockActivities: Activity[] = [
+        {
+          id: '1',
+          type: 'build',
+          message: 'Mobile App API build completed successfully',
+          timestamp: '5 minutes ago',
+          user: 'John Doe',
+        },
+        {
+          id: '2',
+          type: 'commit',
+          message: 'New features pushed to e-commerce-frontend',
+          timestamp: '1 hour ago',
+          user: 'Jane Smith',
+        },
+        {
+          id: '3',
+          type: 'deploy',
+          message: 'Analytics dashboard deployed to production',
+          timestamp: '2 hours ago',
+          user: 'Mike Johnson',
+        },
+        {
+          id: '4',
+          type: 'error',
+          message: 'AI Content Generator build failed',
+          timestamp: '3 hours ago',
+          user: 'Sarah Wilson',
+        },
+      ]
+
+      setProjects(mockProjects)
+      setMetrics(mockMetrics)
+      setActivities(mockActivities)
+      setIsLoading(false)
     }
 
-    fetchDashboardData()
+    loadData()
   }, [])
 
   const getStatusIcon = (status: Project['status']) => {
@@ -132,22 +200,46 @@ export default function DashboardPage() {
     }
   }
 
-  const getStatusColor = (status: Project['status']) => {
-    switch (status) {
-      case 'active':
-        return 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900'
-      case 'building':
-        return 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900'
-      case 'failed':
-        return 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900'
-      case 'completed':
-        return 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900'
+  const getStatusBadge = (status: Project['status']) => {
+    const styles: Record<Project['status'], string> = {
+      active: 'badge-success',
+      building: 'badge-warning',
+      failed: 'badge-error',
+      completed: 'badge-primary',
+    }
+    return <span className={`badge ${styles[status]}`}>{status}</span>
+  }
+
+  const getActivityIcon = (type: ActivityType) => {
+    switch (type) {
+      case 'build':
+        return <ChartBarIcon className="h-4 w-4 text-blue-500" />
+      case 'deploy':
+        return <ArrowTrendingUpIcon className="h-4 w-4 text-green-500" />
+      case 'commit':
+        return <DocumentIcon className="h-4 w-4 text-purple-500" />
+      case 'error':
+        return <ExclamationTriangleIcon className="h-4 w-4 text-red-500" />
       default:
-        return 'text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-900'
+        return <DocumentIcon className="h-4 w-4 text-gray-500" />
     }
   }
 
-  const getTrendIcon = (trend?: Metric['trend']) => {
+  const getMetricColor = (color: MetricColor) => {
+    const colors: Record<MetricColor, string> = {
+      blue: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300',
+      green:
+        'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300',
+      yellow:
+        'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300',
+      red: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300',
+      purple:
+        'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300',
+    }
+    return colors[color]
+  }
+
+  const getTrendIcon = (trend?: MetricTrend) => {
     switch (trend) {
       case 'up':
         return <ArrowTrendingUpIcon className="h-4 w-4 text-green-500" />
@@ -158,11 +250,33 @@ export default function DashboardPage() {
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-pulse">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="card p-6">
+                <div className="skeleton h-8 w-20 mb-2" />
+                <div className="skeleton h-12 w-16 mb-4" />
+                <div className="skeleton h-4 w-24" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 card p-6">
+              <div className="skeleton h-6 w-32 mb-4" />
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton h-16 w-full mb-3" />
+              ))}
+            </div>
+            <div className="card p-6">
+              <div className="skeleton h-6 w-24 mb-4" />
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="skeleton h-12 w-full mb-2" />
+              ))}
+            </div>
+          </div>
         </div>
       </DashboardLayout>
     )
@@ -170,154 +284,61 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Welcome back, {state.user?.name?.split(' ')[0] || 'User'}!
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Dashboard
           </h1>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-300">
-            Here's what's happening with your projects today.
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Welcome back! Here&apos;s what&apos;s happening with your projects
+            today.
           </p>
         </div>
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric, index) => (
-            <div key={index} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                      <ChartBarIcon className="h-5 w-5 text-white" />
-                    </div>
+          {metrics.map((metric, index) => {
+            const Icon = metric.icon
+            return (
+              <div key={index} className="card-hover p-6">
+                <div className="flex items-center justify-between">
+                  <div className={`p-3 rounded-lg ${getMetricColor(metric.color)}`}>
+                    <Icon className="h-6 w-6" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {metric.value}
-                    </p>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      {metric.label}
-                    </p>
-                  </div>
-                  {metric.trend && (
-                    <div className="flex items-center ml-2">
-                      {getTrendIcon(metric.trend)}
-                      <span className={`text-sm font-medium ${
-                        metric.trend === 'up' ? 'text-green-600' : 
-                        metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
-                      }`}>
-                        {Math.abs(metric.change || 0)}%
+                  <button className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <EllipsisHorizontalIcon className="h-5 w-5 text-gray-400" />
+                  </button>
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {metric.value}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {metric.title}
+                  </p>
+                  {metric.change && (
+                    <div className="flex items-center mt-2">
+                      {getTrendIcon(metric.change.trend)}
+                      <span
+                        className={`text-sm ml-1 ${
+                          metric.change.trend === 'up'
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {metric.change.value}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
-        {/* Projects Overview */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Active Projects
-            </h2>
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              <FolderIcon className="h-5 w-5 mr-2" />
-              New Project
-            </button>
-          </div>
-
-          {/* Projects Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <div key={project.id} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      {getStatusIcon(project.status)}
-                      <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(project.status)}`}>
-                        {project.status.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <DocumentIcon className="h-5 w-5" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <UserGroupIcon className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    {project.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                    {project.description}
-                  </p>
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Repository:</span>
-                      <a 
-                        href={`https://github.com/${project.repository}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                      >
-                        {project.repository}
-                      </a>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Coverage:</span>
-                      <div className="flex items-center">
-                        <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${project.coverage}%` }}
-                          />
-                        </div>
-                        <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
-                          {project.coverage}%
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Build Time:</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {project.buildTime}s
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Team:</span>
-                      <div className="flex items-center">
-                        {project.team.slice(0, 2).map((member, index) => (
-                          <div key={index} className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center -ml-2 first:ml-0">
-                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              {member.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </span>
-                          </div>
-                        ))}
-                        {project.team.length > 2 && (
-                          <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                              +{project.team.length - 2}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Projects & Activity sections would go here, using projects and activities state */}
+        {/* Example: map over projects and render cards, using getStatusIcon/getStatusBadge and coverage/team UI you had */}
       </div>
     </DashboardLayout>
   )
