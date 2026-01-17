@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -18,15 +19,13 @@ interface SidebarItem {
   name: string
   href: string
   icon: React.ComponentType<any>
-  current?: boolean
 }
 
 const sidebarItems: SidebarItem[] = [
   {
     name: 'Dashboard',
     href: '/dashboard',
-    icon: ChartBarIcon,
-    current: true
+    icon: ChartBarIcon
   },
   {
     name: 'Projects',
@@ -61,6 +60,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [darkMode, setDarkMode] = useState(false)
 
+  useEffect(() => {
+    const storedToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    if (!state.token && !storedToken) {
+      router.replace('/')
+    }
+  }, [state.token, router])
+
   const handleLogout = () => {
     logout()
     router.push('/')
@@ -94,19 +100,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <nav className="flex-1 px-3 py-4 space-y-1">
             {sidebarItems.map((item) => {
               const Icon = item.icon
+              const isActive = router.pathname === item.href
               return (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    item.current
+                    isActive
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   }`}
                 >
                   <Icon className="mr-3 h-5 w-5" />
                   {item.name}
-                </a>
+                </Link>
               )
             })}
           </nav>

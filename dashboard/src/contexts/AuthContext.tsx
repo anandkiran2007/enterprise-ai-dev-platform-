@@ -18,7 +18,7 @@ interface AuthState {
 
 interface AuthContextType {
   state: AuthState
-  login: (token: string) => void
+  login: (token: string) => Promise<void>
   logout: () => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void

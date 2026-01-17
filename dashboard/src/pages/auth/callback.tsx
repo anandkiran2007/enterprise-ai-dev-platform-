@@ -1,18 +1,24 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function AuthCallback() {
   const router = useRouter()
+  const { login } = useAuth()
 
   useEffect(() => {
-    const { token } = router.query
+    const { token, error, message } = router.query
     
     if (token && typeof token === 'string') {
-      // Store token in localStorage
-      localStorage.setItem('auth_token', token)
-      
-      // Redirect to dashboard
+      login(token)
       router.push('/dashboard')
+      return
+    }
+
+    if (error) {
+      const errMsg = typeof message === 'string' ? message : 'Authentication failed'
+      router.push(`/?error=${encodeURIComponent(String(error))}&message=${encodeURIComponent(errMsg)}`)
+      return
     } else {
       // No token found, redirect to login
       router.push('/')

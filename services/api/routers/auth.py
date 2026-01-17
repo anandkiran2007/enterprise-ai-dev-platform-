@@ -37,15 +37,15 @@ async def github_callback(
             db=db
         )
         
-        # Redirect to dashboard with token
-        redirect_url = f"{settings.dashboard_url}?token={result.access_token}"
+        # Redirect to dashboard callback with token
+        redirect_url = f"{settings.dashboard_url}/auth/callback?token={result.access_token}"
         return RedirectResponse(url=redirect_url, status_code=302)
         
     except Exception as e:
         # Log the error for debugging
         print(f"GitHub callback error: {str(e)}")
         # Redirect to dashboard with error parameter
-        error_url = f"{settings.dashboard_url}?error=auth_failed&message={str(e)}"
+        error_url = f"{settings.dashboard_url}/auth/callback?error=auth_failed&message={str(e)}"
         return RedirectResponse(url=error_url, status_code=302)
 
 
