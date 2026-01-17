@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     github_client_secret: Optional[str] = None
     
     # URLs
-    base_url: str = "http://localhost"
-    dashboard_url: str = "http://localhost"
+    base_url: str = "http://localhost:8000"
+    dashboard_url: str = "http://localhost:3000"
     
     # Storage
     aws_access_key_id: Optional[str] = None

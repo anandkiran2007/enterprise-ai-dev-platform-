@@ -48,6 +48,12 @@ async def github_callback(
         )
 
 
+@router.get("/github")
+async def github_auth_redirect():
+    """Redirect to GitHub OAuth authorize endpoint"""
+    return RedirectResponse(url="/api/auth/github/authorize", status_code=302)
+
+
 @router.get("/github/authorize")
 @router.head("/github/authorize")
 async def github_authorize():

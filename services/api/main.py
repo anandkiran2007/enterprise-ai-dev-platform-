@@ -43,13 +43,13 @@ app.add_middleware(
 security = HTTPBearer()
 
 # Include routers
-app.include_router(auth.router, prefix="/auth", tags=["authentication"])
-app.include_router(organizations.router, prefix="/organizations", tags=["organizations"])
-app.include_router(projects.router, prefix="/projects", tags=["projects"])
-app.include_router(repositories.router, prefix="/repositories", tags=["repositories"])
-app.include_router(features.router, prefix="/features", tags=["features"])
-app.include_router(agents.router, prefix="/agents", tags=["agents"])
-app.include_router(integration.router, prefix="/integration", tags=["coding-tool-integration"])
+app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
+app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])
+app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
+app.include_router(repositories.router, prefix="/api/repositories", tags=["repositories"])
+app.include_router(features.router, prefix="/api/features", tags=["features"])
+app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
+app.include_router(integration.router, prefix="/api/integration", tags=["coding-tool-integration"])
 
 
 @app.get("/")
